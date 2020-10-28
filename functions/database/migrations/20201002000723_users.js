@@ -10,7 +10,7 @@ exports.up = knex =>
     table.string('gender');
     table.float('latitude');
     table.float('longitude');
-    table.json('pictures');
+    table.text('photo');
   });
 
 exports.down = knex => knex.schema.dropTable('users');

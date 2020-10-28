@@ -24,7 +24,7 @@ module.exports = {
           google_id: googleId,
           name: displayName,
           email: email,
-          pictures: JSON.stringify([photoUrl])
+          photo: photoUrl
         });
       }
 
@@ -47,7 +47,6 @@ module.exports = {
 
   async profile (request, response) {
     const token = request.headers['x-access-token'];
-    console.log('token', request.headers)
 
     if (token) {
       jwt.verify(token, '878D79A6F6FB3DBBA9A4689C49A31F5ACA9FC99DF3920C335C0142DA128BE00C', (err, decoded) => {
@@ -67,13 +66,13 @@ module.exports = {
         .select()
         .first();
 
-      user.pictures = JSON.parse(user.pictures);
-
       response.json({
         success: true,
         code: 200,
         user: user
       });
+
+      return;
     } else {
       response.json({
         success: false,
@@ -81,6 +80,8 @@ module.exports = {
         error: 'Não autorizado'
       });
     }
+
+    return;
   },
 
   async updateProfile (request, response) {
@@ -89,7 +90,8 @@ module.exports = {
       about,
       age,
       phone,
-      gender
+      gender,
+      photo
     } = request.body;
 
     if (token) {
@@ -105,20 +107,6 @@ module.exports = {
         request.userId = decoded.id;
       });
 
-      const pictures = [];
-
-      for (let index = 1; index <= 7; index++) {
-        if (request.body[`photo${index}`]) {
-          pictures.push(request.body[`photo${index}`]);
-        }
-
-        if (request.files && request.files[`photo${index}`]) {
-          // eslint-disable-next-line no-await-in-loop
-          await storage(request.files[`photo${index}`][0])
-            .then(url => pictures.push(url));
-        }
-      }
-
       const user = await connection('users')
         .where('id', request.userId)
         .update({
@@ -126,7 +114,7 @@ module.exports = {
           age,
           phone,
           gender,
-          pictures: JSON.stringify(pictures)
+          photo
         });
 
       if (user) {

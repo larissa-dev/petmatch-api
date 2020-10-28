@@ -6,8 +6,9 @@ exports.up = knex =>
     table.integer('age');
     table.string('gender');
     table.string('species');
-    table.json('pictures');
-    table.integer('status');
+    table.string('type');
+    table.text('photo');
+    table.string('category');
     table.integer('user_id');
   });
 
