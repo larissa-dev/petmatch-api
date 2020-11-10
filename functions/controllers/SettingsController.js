@@ -23,8 +23,14 @@ module.exports = {
         .select()
         .first();
 
+        console.log(request.userId)
+
       if (settings && settings.categories) {
         settings.categories = JSON.parse(settings.categories);
+      }
+
+      if (settings && settings.search_by) {
+        settings.search_by = JSON.parse(settings.search_by);
       }
 
       response.json({
@@ -71,8 +77,6 @@ module.exports = {
         .where('user_id', request.userId)
         .select();
 
-        console.log(settings);
-
       if (settings.length) {
         await connection('settings')
           .where('user_id', request.userId)
@@ -89,7 +93,7 @@ module.exports = {
           .insert({
             user_id: request.userId,
             active,
-            search_by,
+            search_by: JSON.stringify(search_by),
             distance,
             categories: JSON.stringify(categories),
             notifications_matches,

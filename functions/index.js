@@ -14,6 +14,7 @@ const SearchController = require('./controllers/SearchController');
 app.post('/login', UserController.login);
 app.get('/profile', UserController.profile);
 app.put('/profile', UserController.updateProfile);
+app.delete('/profile', UserController.deleteUser);
 app.put('/profile/location', UserController.setLocation);
 
 app.get('/pets', PetController.index);

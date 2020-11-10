@@ -26,9 +26,22 @@ module.exports = {
           email: email,
           photo: photoUrl
         });
+
+        await connection('settings')
+          .insert({
+            user_id: id,
+            active: 0,
+            search_by: JSON.stringify([]),
+            distance: 30,
+            categories: JSON.stringify([]),
+            notifications_matches: true,
+            notifications_messages: true
+          })
       }
 
       id = id ? id : user.id;
+
+      
 
       const token = jwt.sign({ id }, '878D79A6F6FB3DBBA9A4689C49A31F5ACA9FC99DF3920C335C0142DA128BE00C');
 
@@ -183,5 +196,42 @@ module.exports = {
     });
 
     return;
+  },
+
+  async deleteUser(request, response) {
+    const token = request.headers['x-access-token'];
+
+    jwt.verify(token, '878D79A6F6FB3DBBA9A4689C49A31F5ACA9FC99DF3920C335C0142DA128BE00C', (err, decoded) => {
+      if (err) {
+        response.json({
+          success: false,
+          code: 500,
+          error: 'Erro ao autenticar usuário'
+        });
+      }
+
+      request.userId = decoded.id;
+    });
+
+    await connection('matches')
+      .where('user_id', request.userId)
+      .del();
+
+    await connection('pets')
+      .where('user_id', request.userId)
+      .del();
+
+    await connection('users')
+      .where('id', request.userId)
+      .del();
+
+    await connection('settings')
+      .where('user_id', request.userId)
+      .del();
+
+    response.json({
+      success: true,
+      status: 200
+    });
   }
 };

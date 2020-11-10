@@ -3,7 +3,7 @@ exports.up = knex =>
     table.increments('id');
     table.integer('user_id');
     table.boolean('active');
-    table.string('search_by');
+    table.json('search_by');
     table.integer('distance');
     table.json('categories');
     table.boolean('notifications_matches');

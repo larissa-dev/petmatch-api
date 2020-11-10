@@ -1,25 +1,3 @@
-/**
- *
-  SELECT
-      ROUND(SQRT(POW(u.latitude - ({$lat}), 2) + POW(u.longitude - ({$lng}), 2)) * 100 , 2) AS distancy,
-      u.id
-  FROM
-      users AS u
-  JOIN pets AS p
-      ON u.id = p.user_id
-  JOIN services AS s
-      ON s.id IN ({$bindingsString})
-  WHERE
-      u.latitude IS NOT NULL
-  AND
-      u.longitude IS NOT NULL
-  AND
-      ROUND(SQRT(POW(u.latitude - ({$lat}), 2) + POW(u.longitude - ({$lng}), 2)) * 100 , 2) < 700
-  ORDER BY
-      distancy ASC
-  LIMIT 200
- */
-
 const connection = require('./../database/connection');
 const mysql = require('./../database/mysql');
 const jwt = require('jsonwebtoken');
@@ -47,39 +25,75 @@ module.exports = {
       .select()
       .first();
 
-    const pets = await mysql.connect(error => {
-      if (error) {
+
+    const userSettings = await connection('settings')
+      .where('user_id', request.userId)
+      .select()
+      .first();
+
+    if (user && userSettings) {
+      if (
+        !JSON.parse(userSettings.categories).length ||
+        !JSON.parse(userSettings.search_by).length
+      ) {
         response.json({
           success: false,
           code: 500,
+          error: 'empty_categories_types'
         });
+
+        return
       }
 
       mysql.query(
         `SELECT
           ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) AS distancy,
-          u.id
+          p.*
         FROM
           users AS u
         JOIN pets AS p
           ON u.id = p.user_id
+        JOIN matches AS m
+          ON p.id <> m.pet_id
+          AND u.id <> m.user_id
         WHERE
           u.latitude IS NOT NULL
         AND
           u.longitude IS NOT NULL
+        AND
+          u.id <> ${user.id}
+        AND
+          p.type IN (${JSON.parse(userSettings.categories).map(item => "'" + item.replace("'", "''") + "'").join()})
+        AND
+          p.category IN (${JSON.parse(userSettings.search_by).map(item => "'" + item.replace("'", "''") + "'").join()})
+        AND
+          ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) < ${userSettings.distance}
         ORDER BY
           distancy ASC
-        LIMIT 200`,
-        (err, result) => {
+        LIMIT 200;`,
+        async (err, results) => {
           if (err) {
             response.json({
               success: false,
               code: 500,
+              error: err
             });
-          }
-          console.log(result);
-        });
-    });
 
+            return;
+          }
+
+          response.json({
+            success: true,
+            pets: results
+          });
+        });
+
+        return;
+    }
+
+    response.json({
+      success: false,
+      code: 500,
+    });
   }
 };
