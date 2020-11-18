@@ -41,7 +41,11 @@ module.exports = {
 
       id = id ? id : user.id;
 
-      
+      await connection('users')
+        .where('email', email)
+        .update({
+          google_id: googleId
+        })
 
       const token = jwt.sign({ id }, '878D79A6F6FB3DBBA9A4689C49A31F5ACA9FC99DF3920C335C0142DA128BE00C');
 

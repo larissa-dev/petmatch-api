@@ -10,6 +10,7 @@ const UserController = require('./controllers/UserController');
 const PetController = require('./controllers/PetController');
 const SettingsController = require('./controllers/SettingsController');
 const SearchController = require('./controllers/SearchController');
+const MatchController = require('./controllers/MatchController');
 
 app.post('/login', UserController.login);
 app.get('/profile', UserController.profile);
@@ -26,5 +27,8 @@ app.get('/settings', SettingsController.get);
 app.put('/settings', SettingsController.saveSettings);
 
 app.get('/pets/search', SearchController.getNearestPets);
+
+app.post('/match', MatchController.match);
+app.get('/matches', MatchController.getMatches);
 
 exports.api = functions.https.onRequest(app);

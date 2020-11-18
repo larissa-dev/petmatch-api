@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 module.exports = {
   async getNearestPets(request, response) {
     const token = request.headers['x-access-token'];
+    console.log(token)
 
     if (token) {
       jwt.verify(token, '878D79A6F6FB3DBBA9A4689C49A31F5ACA9FC99DF3920C335C0142DA128BE00C', (err, decoded) => {
@@ -20,11 +21,12 @@ module.exports = {
       });
     }
 
+    console.log(request.userId)
+
     const user = await connection('users')
       .where('id', request.userId)
       .select()
       .first();
-
 
     const userSettings = await connection('settings')
       .where('user_id', request.userId)
@@ -47,15 +49,12 @@ module.exports = {
 
       mysql.query(
         `SELECT
-          ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) AS distancy,
-          p.*
+          p.*,
+          ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) AS distancy
         FROM
           users AS u
         JOIN pets AS p
           ON u.id = p.user_id
-        JOIN matches AS m
-          ON p.id <> m.pet_id
-          AND u.id <> m.user_id
         WHERE
           u.latitude IS NOT NULL
         AND
