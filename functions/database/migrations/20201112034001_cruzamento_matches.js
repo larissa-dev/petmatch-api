@@ -9,4 +9,4 @@ knex.schema.createTable('cruzamento_matches', table => {
   table.timestamp('date').nullable();
 });
 
-exports.down = knex => knex.schema.dropTable('pending_matches');
+exports.down = knex => knex.schema.dropTable('cruzamento_matches');

@@ -47,6 +47,16 @@ module.exports = {
         return
       }
 
+      const userInteractions = await connection('users_approved_denied_pets')
+        .where({
+          user_id: request.userId,
+        })
+        .select()
+
+      const petsId = []
+
+      userInteractions.forEach(el => petsId.push(el.pet_id))
+
       mysql.query(
         `SELECT
           p.*,
@@ -60,11 +70,13 @@ module.exports = {
         AND
           u.longitude IS NOT NULL
         AND
-          u.id <> ${user.id}
+          u.id != ${user.id}
         AND
           p.type IN (${JSON.parse(userSettings.categories).map(item => "'" + item.replace("'", "''") + "'").join()})
         AND
           p.category IN (${JSON.parse(userSettings.search_by).map(item => "'" + item.replace("'", "''") + "'").join()})
+        AND
+          p.id NOT IN (${petsId.map(item => "'" + item + "'").join()})
         AND
           ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) < ${userSettings.distance}
         ORDER BY

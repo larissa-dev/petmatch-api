@@ -28,6 +28,8 @@ app.put('/settings', SettingsController.saveSettings);
 
 app.get('/pets/search', SearchController.getNearestPets);
 
+app.post('/pets/deny', MatchController.denyPet);
+
 app.post('/match', MatchController.match);
 app.get('/matches', MatchController.getMatches);
 
