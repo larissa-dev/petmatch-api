@@ -75,8 +75,7 @@ module.exports = {
           p.type IN (${JSON.parse(userSettings.categories).map(item => "'" + item.replace("'", "''") + "'").join()})
         AND
           p.category IN (${JSON.parse(userSettings.search_by).map(item => "'" + item.replace("'", "''") + "'").join()})
-        AND
-          p.id NOT IN (${petsId.map(item => "'" + item + "'").join()})
+        ${petsId.length ? `AND p.id NOT IN (${petsId.map(item => "'" + item + "'").join()})` : ''}
         AND
           ROUND(SQRT(POW(u.latitude - (${user.latitude}), 2) + POW(u.longitude - (${user.longitude}), 2)) * 100 , 2) < ${userSettings.distance}
         ORDER BY

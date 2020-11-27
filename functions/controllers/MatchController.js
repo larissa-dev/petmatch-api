@@ -1,5 +1,4 @@
 const connection = require('./../database/connection');
-const mysql = require('./../database/mysql');
 const jwt = require('jsonwebtoken');
 
 module.exports = {
@@ -26,9 +25,9 @@ module.exports = {
     }
 
     const pet = await connection('pets')
-      .where('id', petId)
-      .select()
-      .first();
+    .where('id', petId)
+    .select()
+    .first();
 
     if (pet.category === 'Adoção' || pet.category === 'Desaparecido') {
       await connection('matches')
@@ -54,20 +53,22 @@ module.exports = {
       return
     } else {
 
+
+
       const hasLikedOne = await connection('cruzamento_matches')
         .where('one_user_id', request.userId)
         .where('two_user_id', pet.user_id)
         .select()
         .first()
 
-      const hasLikedrTwo = await connection('cruzamento_matches')
+      const hasLikedTwo = await connection('cruzamento_matches')
         .where('two_user_id', request.userId)
         .where('one_user_id', pet.user_id)
         .select()
         .first()
 
-      if (!hasLikedOne) {
-        await connection('cruzamento_matches')
+      if (hasLikedOne == undefined && hasLikedTwo == undefined) {
+        const [match] = await connection('cruzamento_matches')
           .insert({
             one_user_id: request.userId,
             one_user_liked: true,
@@ -75,11 +76,14 @@ module.exports = {
             two_user_liked: false
           })
 
-        await connection('users_approved_denied_pets')
-          .insert({
-            user_id: request.userId,
-            pet_id: pet.id
-          })
+          console.log(match)
+
+        if (match) {
+          await connection('users_approved_denied_pets')
+            .insert({
+              user_id: request.userId,
+              pet_id: pet.id
+            })
 
           response.json({
             success: true,
@@ -88,22 +92,31 @@ module.exports = {
           })
 
           return
+        }
       }
 
-      if (hasLikedrTwo.two_user_id === request.userId) {
-        await connection('cruzamento_matches')
-          .where('id', hasLikedrTwo.id)
+      if (hasLikedTwo != undefined && hasLikedTwo.two_user_id === request.userId) {
+        const match = await connection('cruzamento_matches')
+          .where('id', hasLikedTwo.id)
           .update({
             two_user_liked: true
           })
 
-        response.json({
-          success: true,
-          match: true,
-          code: 200,
-        })
+        if (match) {
+          await connection('users_approved_denied_pets')
+            .insert({
+              user_id: hasLikedTwo.two_user_id,
+              pet_id: pet.id
+            })
 
-        return
+          response.json({
+            success: true,
+            match: true,
+            code: 200,
+          })
+
+          return
+        }
       }
     }
 
@@ -133,6 +146,12 @@ module.exports = {
       })
     }
 
+    const userPets = await connection('pets')
+      .where('user_id', request.userId)
+      .select()
+
+    console.log(userPets)
+
     const cruzamentoMatchesOne = await connection('cruzamento_matches')
       .join('users', function() {
         this.on('cruzamento_matches.two_user_id', '=', 'users.id')
@@ -151,18 +170,22 @@ module.exports = {
       .where('two_user_id', request.userId)
       .select()
 
-    let matches = await connection('matches')
+    const matches = await connection('matches')
       .join('users', 'matches.user_id', 'users.id')
       .where('user_id', request.userId)
       .where('user_liked', 1)
+      .orWhereIn('pet_id', userPets.map(el => el.id))
       .select()
 
-    matches = matches.concat(cruzamentoMatchesOne);
-    matches = matches.concat(cruzamentoMatchesTwo);
+    const matchesData = []
+
+    cruzamentoMatchesOne.forEach(el => matchesData.push(el))
+    cruzamentoMatchesTwo.forEach(el => matchesData.push(el))
+    matches.forEach(el => matchesData.push(el))
 
     response.json({
       success: true,
-      matches
+      matches: matchesData
     })
 
     return
